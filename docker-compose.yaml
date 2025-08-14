@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb_container
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+    ports:
+      - "${MONGO_PORT}:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio_container
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - app_network
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 30s
+
+  amp-generator:
+    build:
+      context: ./src/amp_generator
+      dockerfile: Dockerfile
+    container_name: amp_generator_container
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=docker
+      - HOST=0.0.0.0
+      - PORT=8005
+      - AUTO_START_MOTOR=true
+      - DATA_FREQUENCY=${AMP_DATA_FREQUENCY:-100}
+      - BATCH_SIZE=${AMP_BATCH_SIZE:-10}
+      - NOISE_LEVEL=${AMP_NOISE_LEVEL:-0.1}
+    ports:
+      - "8005:8005"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  ai-services:
+    build:
+      context: ./src/ai-services
+      dockerfile: Dockerfile
+    container_name: ai_services_container
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=docker
+      - DOCKER_ENV=true
+      - HOST=0.0.0.0
+      - PORT=8000
+      - MONGO_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
+      - MONGO_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+      - MONGO_HOST=mongodb
+      - MONGO_PORT=27017
+      - MONGO_AUTH_DB=${MONGO_AUTH_DB}
+      - MONGO_APP_DATABASE=${MONGO_APP_DATABASE}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_API_PORT=9000
+      - MOTOR_WEBSOCKET_URL=ws://amp-generator:8005/ws
+      - PIPELINE_WINDOW_SIZE=${PIPELINE_WINDOW_SIZE:-16384}
+      - PIPELINE_WINDOWS_PER_BATCH=${PIPELINE_WINDOWS_PER_BATCH:-20}
+      - PIPELINE_OVERLAP_RATIO=${PIPELINE_OVERLAP_RATIO:-0.75}
+      - PIPELINE_LSTM_STEPS=${PIPELINE_LSTM_STEPS:-5}
+    ports:
+      - "8000:8000"
+    networks:
+      - app_network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      amp-generator:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge
