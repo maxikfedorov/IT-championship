@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import Response
 from models.motor_features import MotorDefectFeatures
@@ -208,3 +209,90 @@ async def get_batch_features(batch_id: str):
         return doc
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/schema")
+async def get_features_schema():
+    """Возвращает полную схему всех признаков для dashboard visualization"""
+    
+    # Полная схема признаков на основе реальных данных
+    feature_schema = {
+        "total_features": 119,  # Или точное количество
+        "categories": {
+            "common": {
+                "description": "Basic statistical features",
+                "features": [
+                    "rms_A", "mean_A", "std_A", "rms_B", "mean_B", "std_B", 
+                    "rms_C", "mean_C", "std_C", "total_imbalance", "rms_imbalance",
+                    "imbalance_ab", "imbalance_bc", "imbalance_ca", 
+                    "park_ellipticity", "park_mag_mean", "park_mag_std"
+                ]
+            },
+            "rotor": {
+                "description": "Rotor fault indicators",
+                "features": [
+                    "rotor_sb1_lower_ratio_A", "rotor_sb1_upper_ratio_A", "rotor_sb2_lower_ratio_A",
+                    "rotor_sb1_lower_amp_A", "rotor_sb1_upper_amp_A", "rotor_sb1_lower_ratio_B",
+                    "rotor_sb1_upper_ratio_B", "rotor_sb1_upper_ratio_C", "rotor_sb1_lower_ratio_combined",
+                    "rotor_stft_ratio_A", "rotor_stft_main_energy_A", "rotor_stft_sb1_energy_A",
+                    "rotor_stft_energy_var_A", "rotor_stft_ratio_B", "rotor_stft_ratio_C"
+                ]
+            },
+            "stator": {
+                "description": "Stator winding analysis",
+                "features": [
+                    "k2_asymmetry", "thd_A", "thd_B", "thd_C",
+                    "h3_ratio_A", "h5_ratio_A", "h7_ratio_A", "h3_ratio_B", "h5_ratio_B", "h7_ratio_B",
+                    "h3_ratio_C", "h5_ratio_C", "h7_ratio_C", "phase_deviation_ab", "phase_deviation_bc", "phase_deviation_ca",
+                    "modulation_coeff_A", "modulation_coeff_B", "modulation_coeff_C",
+                    "rel_energy_low_band_A", "rel_energy_medium_band_A", "rel_energy_high_band_A",
+                    "rel_energy_low_band_B", "rel_energy_medium_band_B", "rel_energy_high_band_B",
+                    "rel_energy_low_band_C", "rel_energy_medium_band_C", "rel_energy_high_band_C"
+                ]
+            },
+            "bearing": {
+                "description": "Bearing fault detection",
+                "features": [
+                    "bearing_bpfo_amp_A", "bearing_bpfi_amp_A", "bearing_bpfo_amp_B", "bearing_bpfi_amp_B",
+                    "bearing_bpfo_amp_C", "bearing_bpfi_amp_C", "bearing_bsf_amp_A", "bearing_ftf_amp_A",
+                    "bearing_bpfo_2h_amp_A", "bearing_bpfi_2h_amp_A", "bearing_bpfo_band_rms_A", "bearing_bpfi_band_rms_A",
+                    "bearing_env_kurtosis_A", "bearing_env_rms_A", "bearing_env_peak_factor_A", 
+                    "bearing_env_bpfo_A", "bearing_env_bpfi_A", "bearing_hf_energy_A", "bearing_crest_factor_A",
+                    "bearing_env_kurtosis_B", "bearing_env_rms_B", "bearing_env_peak_factor_B", 
+                    "bearing_hf_energy_B", "bearing_crest_factor_B", "bearing_env_kurtosis_C",
+                    "bearing_env_rms_C", "bearing_env_peak_factor_C", "bearing_hf_energy_C",
+                    "bearing_env_kurtosis_max", "bearing_hf_energy_max"
+                ]
+            },
+            "eccentricity": {
+                "description": "Rotor eccentricity analysis", 
+                "features": [
+                    "ecc_current_asymmetry", "ecc_max_deviation", "ecc_rms_variance", "ecc_max_min_ratio",
+                    "ecc_corr_ab", "ecc_corr_bc", "ecc_corr_ca", "ecc_mean_correlation", "ecc_correlation_variance", "ecc_min_correlation",
+                    "ecc_main_1_lower_amp_A", "ecc_main_1_lower_ratio_A", "ecc_main_1_upper_amp_A", "ecc_main_1_upper_ratio_A",
+                    "ecc_main_1_lower_amp_B", "ecc_main_1_upper_amp_B", "ecc_main_1_lower_amp_C", "ecc_main_1_upper_amp_C",
+                    "ecc_main_2_lower_ratio_A", "ecc_rotor_freq_modulation_A", "ecc_2rotor_freq_modulation_A", "ecc_envelope_modulation_A",
+                    "ecc_rotor_freq_modulation_B", "ecc_envelope_modulation_B", "ecc_rotor_freq_modulation_C",
+                    "ecc_harmonic_ratio_A", "ecc_total_harmonic_energy_A", "ecc_harmonic_ratio_B", "ecc_harmonic_ratio_C"
+                ]
+            }
+        }
+    }
+    
+    # Создаем плоский mapping: индекс -> название
+    flat_mapping = {}
+    index = 0
+    
+    for category_name, category_data in feature_schema["categories"].items():
+        for feature_name in category_data["features"]:
+            flat_mapping[index] = feature_name
+            index += 1
+    
+    # Обновляем общее количество
+    feature_schema["total_features"] = len(flat_mapping)
+    
+    return {
+        "schema_version": "1.0",
+        "generated_at": datetime.utcnow().isoformat(),
+        "feature_mapping": flat_mapping,
+        "categorized_schema": feature_schema
+    }

@@ -15,6 +15,8 @@ from routers.dual_lstm import router as dual_lstm_router
 from routers.hybrid_lstm import router as hybrid_lstm_router
 from routers.streaming import router as streaming_router
 from routers.pipeline import router as pipeline_router
+from routers.batches import router as batches_router
+
 
 from database.database import connect_to_mongo, close_mongo_connection, connect_to_minio
 from utils.logger import log
@@ -95,6 +97,7 @@ app.include_router(dual_lstm_router)
 # app.include_router(hybrid_lstm_router)
 app.include_router(streaming_router)
 app.include_router(pipeline_router) 
+app.include_router(batches_router)
 
 @app.get("/health")
 async def health_check():
