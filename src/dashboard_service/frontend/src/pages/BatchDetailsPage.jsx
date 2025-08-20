@@ -1,4 +1,4 @@
-// frontend/src/pages/BatchDetailsPage.jsx
+// src/dashboard_service/frontend/src/pages/BatchDetailsPage.jsx
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../api/apiClient";
@@ -14,9 +14,9 @@ export default function BatchDetailsPage() {
   const [timeline, setTimeline] = useState(null);
   const [pending, setPending] = useState(false);
 
-  // функция загрузки таймлайна
   const fetchTimeline = () => {
-    api.get(`/api/batch/${batch_id}/anomalies/timeline`)
+    api
+      .get(`/api/batch/${batch_id}/anomalies/timeline`)
       .then((res) => {
         setTimeline(res.data.timeline || []);
         setPending(res.data.pending || false);
@@ -27,20 +27,32 @@ export default function BatchDetailsPage() {
       });
   };
 
+  const downloadReport = (format) => {
+    api
+      .get(`/report/batch/${batch_id}?format=${format}`, { responseType: "blob" })
+      .then((res) => {
+        const blobUrl = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.setAttribute("download", `batch_${batch_id}.${format}`);
+        document.body.appendChild(link);
+        link.click();
+      })
+      .catch((err) => console.error("Report download failed", err));
+  };
+
   useEffect(() => {
-    // грузим overview
-    api.get(`/api/batch/${batch_id}/overview?user_id=${user_id}`)
+    api
+      .get(`/api/batch/${batch_id}/overview?user_id=${user_id}`)
       .then((res) => setOverview(res.data.processed_summary))
       .catch(() => setOverview(null));
 
-    // стартовый запрос timeline
     fetchTimeline();
   }, [batch_id, user_id]);
 
-  // авто-повтор, если pending = true
   useEffect(() => {
     if (pending) {
-      const t = setTimeout(fetchTimeline, 2000); // повтор через 2с
+      const t = setTimeout(fetchTimeline, 2000);
       return () => clearTimeout(t);
     }
   }, [pending]);
@@ -51,6 +63,16 @@ export default function BatchDetailsPage() {
     <div>
       <Breadcrumbs />
       <h2>Batch {batch_id} Details</h2>
+
+      <div style={{ margin: "10px 0" }}>
+        <button onClick={() => downloadReport("json")}>
+          Download Batch Report (JSON)
+        </button>
+        <button onClick={() => downloadReport("pdf")} style={{ marginLeft: "10px" }}>
+          Download Batch Report (PDF)
+        </button>
+      </div>
+
       <BatchOverview summary={overview} />
       <WindowSelector
         totalWindows={overview.total_windows}

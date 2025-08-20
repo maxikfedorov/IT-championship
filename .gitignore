@@ -215,3 +215,4 @@ model_weights
 *.csv
 *legacy*
 node_modules
+tests.ipynb
