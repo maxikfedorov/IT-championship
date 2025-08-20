@@ -11,8 +11,7 @@ import {
   Spin,
   Alert,
   Card,
-  Tag,
-  Divider
+  Tag
 } from "antd";
 import { 
   DownloadOutlined, 
@@ -55,31 +54,27 @@ export default function WindowDetailsPage() {
     switch (status?.toLowerCase()) {
       case 'healthy':
         return {
-          color: 'var(--accent-success)',
+          color: 'success',
           icon: <CheckCircleOutlined />,
-          bgColor: 'linear-gradient(135deg, var(--accent-success)15, var(--accent-success)08)',
-          tag: 'success'
+          text: 'Healthy'
         };
       case 'monitor':
         return {
-          color: 'var(--accent-warning)',
+          color: 'warning', 
           icon: <ExclamationCircleOutlined />,
-          bgColor: 'linear-gradient(135deg, var(--accent-warning)15, var(--accent-warning)08)',
-          tag: 'warning'
+          text: 'Monitor'
         };
       case 'critical':
         return {
-          color: 'var(--accent-danger)',
+          color: 'error',
           icon: <CloseCircleOutlined />,
-          bgColor: 'linear-gradient(135deg, var(--accent-danger)15, var(--accent-danger)08)',
-          tag: 'error'
+          text: 'Critical'
         };
       default:
         return {
-          color: 'var(--text-muted)',
+          color: 'default',
           icon: <ExclamationCircleOutlined />,
-          bgColor: 'var(--glass-secondary)',
-          tag: 'default'
+          text: status || 'Unknown'
         };
     }
   };
@@ -195,26 +190,39 @@ export default function WindowDetailsPage() {
         <Breadcrumbs />
       </div>
 
-      {/* Header Section */}
-      <div className="glass-panel" style={{ padding: '32px', marginBottom: '24px' }}>
+      {/* Compact Header */}
+      <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
         <Row justify="space-between" align="middle">
           <Col>
             <Space align="center" size="middle">
               <EyeOutlined 
                 style={{ 
-                  fontSize: '32px', 
+                  fontSize: '28px', 
                   color: 'var(--accent-primary)' 
                 }} 
               />
               <div>
-                <Title 
-                  level={2} 
-                  className="text-gradient"
-                  style={{ margin: 0, fontSize: '28px' }}
-                >
-                  Window #{window_id}
-                </Title>
-                <Text type="secondary" style={{ fontSize: '16px' }}>
+                <Space align="center" size="middle">
+                  <Title 
+                    level={2} 
+                    className="text-gradient"
+                    style={{ margin: 0, fontSize: '24px' }}
+                  >
+                    Window #{window_id}
+                  </Title>
+                  <Tag 
+                    color={statusConfig.color}
+                    icon={statusConfig.icon}
+                    style={{ 
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      padding: '4px 8px'
+                    }}
+                  >
+                    {statusConfig.text}
+                  </Tag>
+                </Space>
+                <Text type="secondary" style={{ fontSize: '14px' }}>
                   {formatBatchId(batch_id)} • Detailed Analysis
                 </Text>
               </div>
@@ -231,12 +239,11 @@ export default function WindowDetailsPage() {
                   background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-primary-light))',
                   border: 'none',
                   borderRadius: '8px',
-                  height: '40px',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   transform: downloadLoading ? 'scale(0.98)' : 'scale(1)',
                 }}
               >
-                JSON Report
+                JSON
               </Button>
               <Button
                 icon={<FilePdfOutlined />}
@@ -246,59 +253,36 @@ export default function WindowDetailsPage() {
                   borderColor: 'var(--accent-primary)',
                   color: 'var(--accent-primary)',
                   borderRadius: '8px',
-                  height: '40px',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   transform: downloadLoading ? 'scale(0.98)' : 'scale(1)',
                 }}
               >
-                PDF Report
+                PDF
               </Button>
             </Space>
           </Col>
         </Row>
       </div>
 
-      {/* System Status */}
-      <Card 
-        className="glass-card"
-        style={{ marginBottom: '24px' }}
-        bodyStyle={{ padding: '20px' }}
-      >
-        <div 
-          className="glass-panel"
-          style={{
-            padding: '20px',
-            textAlign: 'center',
-            background: statusConfig.bgColor,
-            border: `1px solid ${statusConfig.color}20`
-          }}
-        >
-          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-            <div style={{ color: statusConfig.color, fontSize: '32px' }}>
-              {statusConfig.icon}
-            </div>
-            <div>
-              <Title level={4} style={{ margin: 0, color: 'var(--text-primary)' }}>
-                System Health Status
-              </Title>
-              <Tag 
-                color={statusConfig.tag}
-                style={{ 
-                  fontSize: '14px', 
-                  padding: '4px 12px',
-                  marginTop: '8px'
-                }}
-              >
-                {autoencoder.overall?.system_health_status || 'Unknown'}
-              </Tag>
-            </div>
-          </Space>
-        </div>
-      </Card>
-
       {/* Main Analysis Grid */}
       <Row gutter={[24, 24]}>
-        {/* Autoencoder Components */}
+        {/* Component Health Matrix - MAIN TABLE */}
+        <Col xs={24}>
+          <Card 
+            className="glass-card"
+            title={
+              <Space align="center">
+                <AppstoreOutlined style={{ color: 'var(--accent-success)' }} />
+                <span>Component Health Overview</span>
+              </Space>
+            }
+            bodyStyle={{ padding: '16px' }}
+          >
+            <ComponentHealthMatrix components={autoencoder.components || {}} />
+          </Card>
+        </Col>
+
+        {/* Autoencoder Components - COMPACT */}
         <Col xs={24}>
           <Card 
             className="glass-card"
@@ -308,31 +292,15 @@ export default function WindowDetailsPage() {
                 <span>Autoencoder Analysis</span>
               </Space>
             }
-            bodyStyle={{ padding: '20px' }}
+            bodyStyle={{ padding: '16px' }}
           >
-            <Row gutter={[16, 16]}>
+            <Row gutter={[12, 12]}>
               {Object.entries(autoencoder.components || {}).map(([comp, data]) => (
                 <Col xs={24} sm={12} lg={8} xl={6} key={comp}>
-                  <AutoencoderCard component={comp} data={data} />
+                  <AutoencoderCard component={comp} data={data} compact={true} />
                 </Col>
               ))}
             </Row>
-          </Card>
-        </Col>
-
-        {/* Component Health Matrix */}
-        <Col xs={24}>
-          <Card 
-            className="glass-card"
-            title={
-              <Space align="center">
-                <AppstoreOutlined style={{ color: 'var(--accent-success)' }} />
-                <span>Component Health Matrix</span>
-              </Space>
-            }
-            bodyStyle={{ padding: '20px' }}
-          >
-            <ComponentHealthMatrix components={autoencoder.components || {}} />
           </Card>
         </Col>
 
@@ -348,7 +316,7 @@ export default function WindowDetailsPage() {
                 </Space>
               }
               style={{ height: '100%' }}
-              bodyStyle={{ padding: '20px' }}
+              bodyStyle={{ padding: '16px' }}
             >
               <AttentionHeatmap attention={attention} />
             </Card>
@@ -383,7 +351,7 @@ export default function WindowDetailsPage() {
                 </Space>
               }
               style={{ height: '100%' }}
-              bodyStyle={{ padding: '20px' }}
+              bodyStyle={{ padding: '16px' }}
             >
               <LSTMPredictionsChart lstm={lstm} />
             </Card>

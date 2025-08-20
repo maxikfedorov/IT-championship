@@ -3,7 +3,6 @@
 import { 
   Table, 
   Tag, 
-  Progress, 
   Typography, 
   Space,
   Tooltip,
@@ -57,16 +56,16 @@ export default function ComponentHealthMatrix({ components }) {
     };
   };
 
-  const getConfidenceColor = (confidence) => {
-    if (confidence >= 0.8) return 'var(--accent-success)';
-    if (confidence >= 0.6) return 'var(--accent-warning)';
-    return 'var(--accent-danger)';
-  };
-
   const getErrorColor = (error) => {
     const errorValue = Number(error);
     if (errorValue <= 0.5) return 'var(--accent-success)';
     if (errorValue <= 1.0) return 'var(--accent-warning)';
+    return 'var(--accent-danger)';
+  };
+
+  const getSeverityColor = (severity) => {
+    if (!severity || severity <= 0) return 'var(--text-muted)';
+    if (severity <= 3) return 'var(--accent-warning)';
     return 'var(--accent-danger)';
   };
 
@@ -178,40 +177,40 @@ export default function ComponentHealthMatrix({ components }) {
     {
       title: (
         <Space align="center">
-          <CheckCircleOutlined style={{ color: 'var(--accent-success)' }} />
-          <Text strong style={{ color: 'var(--text-primary)' }}>Confidence</Text>
+          <WarningOutlined style={{ color: 'var(--accent-danger)' }} />
+          <Text strong style={{ color: 'var(--text-primary)' }}>Severity</Text>
         </Space>
       ),
-      dataIndex: 'confidence_score',
-      key: 'confidence',
-      width: 140,
-      render: (confidence) => {
-        const confidenceValue = Number(confidence);
-        const percentage = Math.round(confidenceValue * 100);
+      dataIndex: 'anomaly_severity',
+      key: 'severity',
+      width: 100,
+      render: (severity) => {
+        const severityValue = Number(severity || 0);
+        if (severityValue <= 0) {
+          return (
+            <div style={{ textAlign: 'center' }}>
+              <Text type="secondary" style={{ fontSize: '11px' }}>
+                -
+              </Text>
+            </div>
+          );
+        }
+        
         return (
           <div style={{ textAlign: 'center' }}>
             <Text 
               strong 
               style={{ 
-                color: getConfidenceColor(confidenceValue),
+                color: getSeverityColor(severityValue),
                 fontSize: '12px'
               }}
             >
-              {percentage}%
+              {severityValue.toFixed(2)}
             </Text>
-            <Progress 
-              percent={percentage}
-              strokeColor={getConfidenceColor(confidenceValue)}
-              trailColor="var(--border-light)"
-              showInfo={false}
-              size="small"
-              strokeWidth={6}
-              style={{ marginTop: '4px' }}
-            />
           </div>
         );
       },
-      sorter: (a, b) => Number(a.confidence_score) - Number(b.confidence_score),
+      sorter: (a, b) => Number(a.anomaly_severity || 0) - Number(b.anomaly_severity || 0),
     },
     {
       title: (
@@ -358,8 +357,8 @@ export default function ComponentHealthMatrix({ components }) {
             </Text> Anomalies
           </Text>
           <Text type="secondary" style={{ fontSize: '11px' }}>
-            Avg Confidence: <Text strong style={{ color: 'var(--accent-primary)' }}>
-              {Math.round(Object.values(components).reduce((acc, c) => acc + Number(c.confidence_score), 0) / Object.keys(components).length * 100)}%
+            Avg Error: <Text strong style={{ color: 'var(--accent-warning)' }}>
+              {(Object.values(components).reduce((acc, c) => acc + Number(c.reconstruction_error), 0) / Object.keys(components).length).toFixed(3)}
             </Text>
           </Text>
         </Space>
