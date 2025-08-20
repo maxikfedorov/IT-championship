@@ -1,36 +1,40 @@
+// frontend/src/components/AnomalyTimeline.jsx
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Scatter
 } from "recharts";
 import { useNavigate, useParams } from "react-router-dom";
 
-export default function AnomalyTimeline({ timeline }) {
+export default function AnomalyTimeline({ timeline, pending, onReload }) {
   const navigate = useNavigate();
   const { user_id, batch_id } = useParams();
 
-  if (!timeline) return <div>No anomaly timeline</div>;
+  // Заглушка при пустых данных
+  if (!timeline || timeline.length === 0) {
+    return (
+      <div style={{ color: "gray" }}>
+        ⏳ Загружаются данные для таймлайна...
+        {pending && <p>()</p>}
+      </div>
+    );
+  }
 
-  // преобразуем статус в цвет
   const statusToColor = (status) => {
     switch (status) {
-      case "Critical":
-        return "red";
-      case "Monitor":
-        return "orange";
-      case "Healthy":
-        return "green";
-      default:
-        return "gray";
+      case "Critical": return "red";
+      case "Monitor": return "orange";
+      case "Healthy": return "green";
+      default: return "gray";
     }
   };
 
-  const data = timeline.map((t) => ({
+  const data = timeline.map((t, i) => ({
     ...t,
-    color: statusToColor(t.system_health_status)
+    color: statusToColor(t.system_health_status),
+    key: `${t.window_index || i}`
   }));
 
-  // обработчик клика по точке
   const handleDotClick = (point) => {
-    if (point && point.window_index) {
+    if (point && point.window_index != null) {
       navigate(`/details/${user_id}/${batch_id}/${point.window_index}`);
     }
   };
@@ -55,6 +59,7 @@ export default function AnomalyTimeline({ timeline }) {
               const { cx, cy, payload } = props;
               return (
                 <circle
+                  key={`dot-${payload.window_index}`}
                   cx={cx}
                   cy={cy}
                   r={6}
@@ -73,6 +78,7 @@ export default function AnomalyTimeline({ timeline }) {
               const { cx, cy, payload } = props;
               return (
                 <circle
+                  key={`scatter-${payload.window_index}`}
                   cx={cx}
                   cy={cy}
                   r={6}

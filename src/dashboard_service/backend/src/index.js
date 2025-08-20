@@ -16,6 +16,7 @@ import motorRoutes from "./routes/motor.js";
 // Для engineer разрешаем:
 import dashboardRoutes from "./routes/dashboard.js";
 import pipelineRoutes from "./routes/pipeline.js";
+import reportRoutes from "./routes/report.js";
 
 dotenv.config({ path: ".env.backend" });
 
@@ -34,7 +35,7 @@ app.use("/api/motor", motorRoutes);
 app.use("/api/pipeline", pipelineRoutes);
 
 app.use("/api/cache", authMiddleware("admin"), cacheRoutes);
-
+app.use("/report", reportRoutes);
 
 app.use("/dashboard", authMiddleware(["engineer", "admin"]), dashboardRoutes);
 

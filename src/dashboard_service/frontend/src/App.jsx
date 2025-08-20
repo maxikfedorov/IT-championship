@@ -6,27 +6,29 @@ import WindowDetailsPage from "./pages/WindowDetailsPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import RequireAuth from "./components/RequireAuth";
-import { useAuth } from "./api/useAuth";
+import { useAuthContext } from "./api/AuthContext";
 
 function App() {
-  const { user, login, logout } = useAuth();
+  const { user, logout } = useAuthContext();
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* Логин: если юзер уже есть → кидаем в дашборд */}
         <Route
           path="/login"
           element={
-            user ? <Navigate to={`/dashboard/${user.username}`} /> : <LoginPage onLogin={login} />
+            user
+              ? <Navigate to={`/dashboard/${user.username}`} />
+              : <LoginPage />
           }
         />
-        
-        {/* Регистрация: если юзер уже есть → в дашборд */}
+
         <Route
           path="/register"
           element={
-            user ? <Navigate to={`/dashboard/${user.username}`} /> : <RegisterPage />
+            user
+              ? <Navigate to={`/dashboard/${user.username}`} />
+              : <RegisterPage />
           }
         />
 
@@ -55,12 +57,12 @@ function App() {
           }
         />
 
-        {/* по умолчанию → если авторизован в dashboard, иначе на login */}
+        {/* по умолчанию */}
         <Route
           path="*"
           element={
-            user 
-              ? <Navigate to={`/dashboard/${user.username}`} /> 
+            user
+              ? <Navigate to={`/dashboard/${user.username}`} />
               : <Navigate to="/login" />
           }
         />

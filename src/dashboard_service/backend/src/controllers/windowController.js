@@ -4,8 +4,7 @@ import BatchCache from "../models/BatchCache.js";
 // helper: get batch from cache
 const getBatchFromCache = async (batch_id) => {
   const batch = await BatchCache.findOne({ batch_id });
-  if (!batch) throw new Error("Batch not found in cache");
-  return batch.complete_data;
+  return batch ? batch.complete_data : null;
 };
 
 // 1. Автоэнкодер для окна
@@ -13,7 +12,9 @@ export const getAutoencoderWindow = async (req, res) => {
   const { batch_id, window_id } = req.params;
   try {
     const data = await getBatchFromCache(batch_id);
-    const window = data.autoencoder.results[window_id];
+    if (!data) return res.json({});
+
+    const window = data.autoencoder?.results?.[window_id];
     if (!window) return res.status(404).json({ error: "Window not found" });
 
     res.json({
@@ -23,8 +24,8 @@ export const getAutoencoderWindow = async (req, res) => {
         bearing: window.bearing,
         rotor: window.rotor,
         stator: window.stator,
-        eccentricity: window.eccentricity
-      }
+        eccentricity: window.eccentricity,
+      },
     });
   } catch (err) {
     console.error("[WINDOW] Autoencoder error", err);
@@ -32,17 +33,19 @@ export const getAutoencoderWindow = async (req, res) => {
   }
 };
 
-// 2. Attention weights для окна
+// 2. Attention
 export const getAttentionWindow = async (req, res) => {
   const { batch_id, window_id } = req.params;
   try {
     const data = await getBatchFromCache(batch_id);
-    const window = data.autoencoder.results[window_id];
+    if (!data) return res.json({});
+
+    const window = data.autoencoder?.results?.[window_id];
     if (!window) return res.status(404).json({ error: "Window not found" });
 
     res.json({
       window_index: window_id,
-      attention_weights: window.autoencoder_features?.attention_weights || {}
+      attention_weights: window.autoencoder_features?.attention_weights || {},
     });
   } catch (err) {
     console.error("[WINDOW] Attention error", err);
@@ -50,22 +53,23 @@ export const getAttentionWindow = async (req, res) => {
   }
 };
 
-// 3. LSTM прогнозы для окна
+// 3. LSTM
 export const getLSTMWindow = async (req, res) => {
   const { batch_id, window_id } = req.params;
   try {
     const data = await getBatchFromCache(batch_id);
+    if (!data) return res.json({});
+
     const lstmData = data.dual_lstm?.results?.[0]?.predictions?.find(
       (p) => p.window_index == window_id
     );
-
     if (!lstmData) return res.status(404).json({ error: "LSTM prediction not found" });
 
     res.json({
       window_index: window_id,
       steps: lstmData.predictions.steps,
       features: lstmData.predictions.features,
-      values: lstmData.predictions.values
+      values: lstmData.predictions.values,
     });
   } catch (err) {
     console.error("[WINDOW] LSTM error", err);
@@ -73,24 +77,23 @@ export const getLSTMWindow = async (req, res) => {
   }
 };
 
-// 4. Лента аномалий (timeline)
+// 4. Timeline
 export const getAnomaliesTimeline = async (req, res) => {
   const { batch_id } = req.params;
   try {
     const data = await getBatchFromCache(batch_id);
-    const windows = data?.autoencoder?.results;
-
-    if (!windows) {
-      return res.status(404).json({ error: "No autoencoder results" });
+    if (!data || !data.autoencoder?.results) {
+      console.warn(`[WINDOW] No data for timeline ${batch_id}`);
+      return res.json({ batch_id, timeline: [], pending: true }); // ⚡ флаг pending
     }
 
-    const timeline = windows.map((w, idx) => ({
+    const timeline = data.autoencoder.results.map((w, idx) => ({
       window_index: idx,
       anomaly_count: w.overall?.anomaly_count ?? 0,
-      system_health_status: w.overall?.system_health_status || "Unknown"
+      system_health_status: w.overall?.system_health_status || "Unknown",
     }));
 
-    res.json({ batch_id, timeline });
+    res.json({ batch_id, timeline, pending: false });
   } catch (err) {
     console.error("[WINDOW] Timeline error", err);
     res.status(500).json({ error: "Timeline fetch failed" });

@@ -6,18 +6,18 @@ import api from "../api/apiClient";
 import BatchList from "../components/BatchList";
 import SystemHealthPanel from "../components/SystemHealthPanel";
 import ControlPanel from "../components/ControlPanel";
+import { useAuthContext } from "../api/AuthContext";
 
 export default function DashboardPage() {
   const { user_id } = useParams();
+  const { user } = useAuthContext(); // теперь берём из состояния, а не из localStorage
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [batchCount, setBatchCount] = useState(10); // ⚡ по умолчанию показываем 10
+  const [batchCount, setBatchCount] = useState(10);
 
-  const localUser = JSON.parse(localStorage.getItem("user") || "{}");
-
-  if (!localUser.username || localUser.username !== user_id) {
-    return <Navigate to={`/dashboard/${localUser.username}`} replace />;
+  if (!user || user.username !== user_id) {
+    return <Navigate to={`/dashboard/${user?.username || ""}`} replace />;
   }
 
   const fetchBatches = () => {
@@ -36,7 +36,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchBatches();
-    const interval = setInterval(fetchBatches, 60000); // обновление раз в минуту
+    const interval = setInterval(fetchBatches, 60000);
     return () => clearInterval(interval);
   }, [user_id, batchCount]);
 
@@ -46,13 +46,16 @@ export default function DashboardPage() {
   return (
     <div>
       <h1>Dashboard — {user_id}</h1>
-      <SystemHealthPanel user={localUser} />
-      <ControlPanel user={localUser} />
+      <SystemHealthPanel user={user} />
+      <ControlPanel user={user} />
 
-      {/* ⚡ Выбор лимита */}
+      {/* Выбор лимита */}
       <div style={{ margin: "10px 0" }}>
         <label>Show last: </label>
-        <select value={batchCount} onChange={(e) => setBatchCount(Number(e.target.value))}>
+        <select
+          value={batchCount}
+          onChange={(e) => setBatchCount(Number(e.target.value))}
+        >
           <option value={10}>10</option>
           <option value={50}>50</option>
           <option value={100}>100</option>

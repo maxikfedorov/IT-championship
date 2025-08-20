@@ -3,9 +3,9 @@ import { Navigate } from "react-router-dom";
 
 export default function RedirectIfAuth({ children }) {
   const user = JSON.parse(localStorage.getItem("user") || "null");
-  const token = localStorage.getItem("token");
+  const accessToken = localStorage.getItem("accessToken");
 
-  if (token && user?.username) {
+  if (accessToken && user?.username) {
     return <Navigate to={`/dashboard/${user.username}`} replace />;
   }
   return children;
