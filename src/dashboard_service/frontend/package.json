@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ant-design/icons": "^4.7.0",
+    "antd": "^4.24.15",
     "axios": "^1.11.0",
     "plotly.js": "^3.1.0",
     "react": "^19.1.1",

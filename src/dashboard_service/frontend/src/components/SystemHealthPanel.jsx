@@ -1,3 +1,5 @@
+// src\dashboard_service\frontend\src\components\SystemHealthPanel.jsx
+
 import { useEffect, useState } from "react";
 import api from "../api/apiClient";
 
