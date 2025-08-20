@@ -75,18 +75,54 @@
 ### Структура репозитория
 
 ```
-├── README.md
-├── data
-│   └── time_series
-│       ├── current_1.csv
-│       ├── current_2.csv
-│       ├── current_3.csv
-│       ├── ...
-├── notebooks
-│   └── ... .ipynb
-├── src
-│   └── ...
-└── requirements.txt
+📁 IT_CHAMPIONSHIP/
+│
+├── ⚙️ .env
+├── ⚙️ .gitignore
+├── 📄 README.md
+├── 📁 data/
+├── 🐳 docker-compose.yaml
+│
+└── 📁 src/
+    │
+    ├── 📁 ai-services/
+    │   ├── ⚙️ .dockerignore
+    │   ├── 🐳 Dockerfile
+    │   ├── 🐍 __init__.py
+    │   ├── 🐍 app.py
+    │   ├── 📁 database/
+    │   │   ├── 🐍 autoencoder_storage.py
+    │   │   ├── 🐍 database.py
+    │   │   ├── 🐍 dual_lstm_storage.py
+    │   │   ├── 🐍 feature_storage.py
+    │   │   └── 🐍 hybrid_storage.py
+    │   ├── 📁 models/
+    │   │   ├── 🐍 __init__.py
+    │   │   ├── 🐍 autoencoder_model.py
+    │   │   ├── 🐍 dual_lstm_model.py
+    │   │   ├── 🐍 hybrid_model.py
+    │   │   └── 🐍 motor_features.py
+    │   ├── 📋 requirements.txt
+    │   ├── 📁 routers/
+    │   │   ├── 🐍 __init__.py
+    │   │   ├── 🐍 autoencoder.py
+    │   │   ├── 🐍 dual_lstm.py
+    │   │   ├── 🐍 features.py
+    │   │   ├── 🐍 hybrid_lstm.py
+    │   │   ├── 🐍 pipeline.py
+    │   │   └── 🐍 streaming.py
+    │   ├── 📁 static/
+    │   └── 📁 utils/
+    │       └── 🔧 logger.py
+    │
+    └── 📁 amp_generator/
+        ├── ⚙️ .dockerignore
+        ├── 🐳 Dockerfile
+        ├── 🐍 __init__.py
+        ├── 🐍 app_motor.py
+        ├── 📁 config/
+        ├── 📋 requirements.txt
+        └── 🐍 three_phase_generator.py
 ```
 
 Вот формализованные критерии для получения максимального балла (5 баллов) по каждой категории:

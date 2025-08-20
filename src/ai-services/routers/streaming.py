@@ -345,8 +345,19 @@ async def get_pipeline_streaming_status(user_id: str):
     """Статус пайплайна для пользователя"""
     status = streaming_pipeline_manager.get_user_status(user_id)
     if not status:
-        raise HTTPException(status_code=404, detail=f"No active pipeline stream for user: {user_id}")
-    return status
+        return {
+            "user_id": user_id,
+            "pipeline_status": "inactive",
+            "timestamp": datetime.now().isoformat()
+        }
+    # если работает – лучше возвращать всегда унифицированный формат
+    return {
+        "user_id": user_id,
+        "pipeline_status": "running",
+        "details": status,
+        "timestamp": datetime.now().isoformat()
+    }
+
 
 @router.get("/pipeline/status")
 async def get_all_pipeline_statuses():

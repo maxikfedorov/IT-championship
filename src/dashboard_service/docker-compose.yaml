@@ -17,8 +17,30 @@ services:
     networks:
       - dashboard_network
 
+  redis:
+    image: redis:7.2
+    container_name: dashboard_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - dashboard_network
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: dashboard_redisinsight
+    restart: unless-stopped
+    ports:
+      - "5540:5540"
+    networks:
+      - dashboard_network
+
 volumes:
   mongodb_data:
+    driver: local
+  redis_data:
     driver: local
 
 networks:

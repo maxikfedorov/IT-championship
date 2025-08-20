@@ -1,14 +1,16 @@
 // frontend/src/components/BatchList.jsx
+import { Link } from "react-router-dom";
+
 export default function BatchList({ batches, user_id }) {
   return (
     <div>
-      <h3>Batch List</h3>
+      <h3>Batches</h3>
       <ul>
-        {batches.map((b) => (
-          <li key={b.batch_id}>
-            <a href={`/details/${user_id}/${b.batch_id}`}>
-              {b.batch_id} | Health: {b.quick_health} | Anomalies: {b.anomaly_count}
-            </a>
+        {batches.map((batch) => (
+          <li key={batch.batch_id}>
+            <Link to={`/details/${user_id}/${batch.batch_id}`}>
+              {batch.batch_id} | Health: {batch.summary?.health_score ?? "-"} | Anomalies: {batch.summary?.anomaly_count ?? 0}
+            </Link>
           </li>
         ))}
       </ul>

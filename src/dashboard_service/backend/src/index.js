@@ -12,9 +12,10 @@ import authRoutes from "./routes/auth.js";
 import { authMiddleware } from "./middleware/authMiddleware.js";
 // Пример: защищаем страницу кэша (только admin)
 import cacheRoutes from "./routes/cache.js";
-
+import motorRoutes from "./routes/motor.js";
 // Для engineer разрешаем:
 import dashboardRoutes from "./routes/dashboard.js";
+import pipelineRoutes from "./routes/pipeline.js";
 
 dotenv.config({ path: ".env.backend" });
 
@@ -27,11 +28,10 @@ app.use(morgan("dev"));
 
 app.use("/auth", authRoutes);
 
-app.use("/dashboard", dashboardRoutes);
 app.use("/api/batch", batchRoutes);
 app.use("/api/batch", windowRoutes);
-
-
+app.use("/api/motor", motorRoutes);
+app.use("/api/pipeline", pipelineRoutes);
 
 app.use("/api/cache", authMiddleware("admin"), cacheRoutes);
 

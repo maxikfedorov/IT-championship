@@ -1,4 +1,5 @@
-// frontend/src/pages/WindowDetailsPage.jsx
+// src\dashboard_service\frontend\src\pages\WindowDetailsPage.jsx
+
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../api/apiClient";
@@ -7,9 +8,10 @@ import AutoencoderCard from "../components/AutoencoderCard";
 import AttentionHeatmap from "../components/AttentionHeatmap";
 import LSTMPredictionsChart from "../components/LSTMPredictionsChart";
 import ComponentHealthMatrix from "../components/ComponentHealthMatrix";
+import Breadcrumbs from "../components/Breadcrumbs";
 
 export default function WindowDetailsPage() {
-  const { batch_id, window_id } = useParams();
+  const { user_id, batch_id, window_id } = useParams();
   const [autoencoder, setAutoencoder] = useState(null);
   const [attention, setAttention] = useState(null);
   const [lstm, setLstm] = useState(null);
@@ -32,6 +34,7 @@ export default function WindowDetailsPage() {
 
   return (
     <div>
+      <Breadcrumbs />
       <h2>Window {window_id} (Batch {batch_id})</h2>
       <h3>System status: {autoencoder.overall.system_health_status}</h3>
 
