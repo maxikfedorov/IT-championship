@@ -1,4 +1,4 @@
-// frontend/src/main.jsx
+// src/dashboard_service/frontend/src/main.jsx
 
 import ReactDOM from "react-dom/client";
 import App from "./App";
@@ -6,7 +6,7 @@ import { SchemaProvider } from "./api/schemaContext";
 import { AuthProvider } from "./api/AuthContext";
 
 import 'antd/dist/reset.css';
-// import './index.css';
+import './styles/theme.css';
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <SchemaProvider>

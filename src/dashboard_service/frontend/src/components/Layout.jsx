@@ -1,3 +1,5 @@
+// src\dashboard_service\frontend\src\components\Layout.jsx
+
 import { Outlet } from "react-router-dom";
 import Breadcrumbs from "./Breadcrumbs";
 
