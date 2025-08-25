@@ -3,9 +3,9 @@ import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import redisClient from "../config/redisClient.js";
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || "super_secret_jwt_key";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "30m";
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || JWT_SECRET;
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
 
 // helper to create tokens
