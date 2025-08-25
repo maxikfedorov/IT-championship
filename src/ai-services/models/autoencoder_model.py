@@ -2,6 +2,10 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import numpy as np
 import os
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+
 import tensorflow as tf
 import json
 import threading
@@ -9,8 +13,7 @@ from minio.error import S3Error
 from database.database import get_minio_client
 from utils.logger import log
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+
 
 MODULE = "autoencoder"
 MODEL_BUCKET = "models"

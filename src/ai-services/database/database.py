@@ -3,14 +3,19 @@ from minio import Minio
 from typing import Optional
 import os
 from utils.logger import log
+from dotenv import load_dotenv
+
+load_dotenv(override=False)
 
 class Database:
     client: Optional[AsyncIOMotorClient] = None
     database = None
     minio_client: Optional[Minio] = None
 
+
 db = Database()
 MODULE = "database"
+
 
 async def connect_to_mongo():
     """Подключение к MongoDB AI с проверкой"""

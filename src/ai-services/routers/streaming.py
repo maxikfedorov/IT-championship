@@ -40,6 +40,8 @@ class StreamingPipelineProcessor:
             'anomalies_detected': 0,
             'healthy_batches': 0
         }
+        self.msg_count = 0  # ⬅️ 1 строка
+
         
     @property
     def required_buffer_size(self):
@@ -152,6 +154,7 @@ class StreamingPipelineProcessor:
             raise
     
     async def _process_incoming_data(self, data_list: List[Dict]):
+        self.msg_count += 1  # ⬅️ 1 строка
         for data_point in data_list:
             self.data_buffer['current_R'].append(data_point.get('current_R', 0))
             self.data_buffer['current_S'].append(data_point.get('current_S', 0))
@@ -371,3 +374,8 @@ async def get_active_pipeline_users():
         "active_users": streaming_pipeline_manager.get_active_users(),
         "count": len(streaming_pipeline_manager.get_active_users())
     }
+
+@router.get("/flow/{user_id}")
+async def data_flow(user_id: str):
+    p = streaming_pipeline_manager.active_processors.get(user_id)
+    return {"messages": p.msg_count if p else 0}  # ⬅️ 3 строки

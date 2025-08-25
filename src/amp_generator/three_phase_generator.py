@@ -37,9 +37,8 @@ class ThreePhaseGenerator:
         
     def _load_data(self):
         try:
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            project_root = os.path.join(current_dir, '..', '..')
-            data_dir = os.path.join(project_root, 'data', 'time_series')
+            current_dir = os.path.dirname(os.path.abspath(__file__))  
+            data_dir = os.path.join(current_dir, 'data') 
             
             print(f"🔍 Looking for CSV files in: {os.path.abspath(data_dir)}")
             print(f"📋 Files to load: {self.config.csv_files}")
