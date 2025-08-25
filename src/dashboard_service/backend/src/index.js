@@ -1,3 +1,5 @@
+// src\dashboard_service\backend\src\index.js
+
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -25,7 +27,22 @@ const app = express();
 
 // middlewares
 app.use(express.json());
-app.use(cors());
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000', 
+    'http://localhost:5173', // Vite dev server
+    'http://127.0.0.1:5173',
+    'http://localhost:8010',
+    'http://127.0.0.1:8010'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
+
 app.use(morgan("dev"));
 
 // routes

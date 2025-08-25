@@ -3,7 +3,7 @@ from .environment import get_host
 
 class Hosts:
     # MongoDB AI
-    MONGO_AI_HOST = get_host('mongodb-ai')
+    MONGO_AI_HOST = get_host('mongodb_ai')
     MONGO_AI_PORT = int(os.getenv('MONGO_AI_PORT', 27017))
     
     # MinIO
@@ -11,7 +11,7 @@ class Hosts:
     MINIO_PORT = int(os.getenv('MINIO_API_PORT', 9000))
     
     # Motor WebSocket - для streaming pipeline
-    MOTOR_HOST = get_host('amp-generator')
+    MOTOR_HOST = get_host('amp_generator')
     MOTOR_PORT = int(os.getenv('AMP_PORT', 8005))
     
     @property
