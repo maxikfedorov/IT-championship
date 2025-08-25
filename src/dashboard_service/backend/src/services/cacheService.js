@@ -69,7 +69,8 @@ export const refreshUserBatchesCache = async (userId, count = 10) => {
 
           return {
             batch_id: batchId,
-            timestamp: b.metadata?.timestamp || new Date().toISOString(),
+            timestamp: b.created_at || b.metadata?.timestamp || b.timestamp || new Date().toISOString(),
+
             summary: {
               health_score: health,
               anomaly_count: anomalyCount,
