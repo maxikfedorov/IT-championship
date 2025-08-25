@@ -189,13 +189,16 @@ export default function DashboardPage() {
 			</div>
 
 			{/* System Control & Status Section */}
-			<Row gutter={[24, 24]} style={{ marginBottom: "24px" }}>
-				<Col xs={24} lg={12}>
+			<Row
+				gutter={[24, 24]}
+				align="stretch"
+				style={{ marginBottom: "24px" }}
+			>
+				<Col xs={24} lg={10}>
 					<SystemControlPanel user={user} />
 				</Col>
-				<Col xs={24} lg={12}>
-					<MotorHealthOverview user={user} />{" "}
-					{/* ✅ ЗАМЕНИТЬ заглушку */}
+				<Col xs={24} lg={24-10}>
+					<MotorHealthOverview user={user} />
 				</Col>
 			</Row>
 

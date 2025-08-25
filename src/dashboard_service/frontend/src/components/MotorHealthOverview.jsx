@@ -132,6 +132,7 @@ export default function MotorHealthOverview({ user }) {
   return (
     <Card 
       className="glass-card"
+      style={{ height: '100%' }} 
       title={
         <Space align="center">
           <HeartOutlined style={{ color: 'var(--accent-primary)' }} />
