@@ -33,16 +33,23 @@ export const refreshBatchCache = async (batchId, userId) => {
 function deriveHealthScore(processed) {
   if (!processed) return { health_score: null, anomaly_count: null };
 
-  const anomalyCount = processed.anomaly_windows ?? 0;
-  const avgError = processed.avg_reconstruction_error ?? 0;
+  const totalWindows = processed.total_windows ?? 0;
+  const anomalyWindows = processed.anomaly_windows ?? 0;
 
-  let healthScore = 1.0;
-  if (anomalyCount > 0) healthScore = 0.3;
-  else if (avgError > 0.5) healthScore = 0.5;
-  else healthScore = 0.9;
+  // Используем ТУ ЖЕ логику что и в BatchOverview!
+  const healthPercentage = totalWindows > 0
+    ? Math.round(((totalWindows - anomalyWindows) / totalWindows) * 100)
+    : 0;
 
-  return { health_score: healthScore, anomaly_count: anomalyCount };
+  // Конвертируем в decimal для совместимости (0.0 - 1.0)
+  const healthScore = healthPercentage / 100;
+
+  return {
+    health_score: healthScore,
+    anomaly_count: anomalyWindows
+  };
 }
+
 
 // refresh user batches list
 export const refreshUserBatchesCache = async (userId, count = 10) => {
@@ -50,34 +57,50 @@ export const refreshUserBatchesCache = async (userId, count = 10) => {
 
   const summaries = (batches && batches.length > 0)
     ? await Promise.all(
-        batches.map(async (b) => {
-          const batchId = b.batch_id || b._id || "unknown";
+      batches.map(async (b) => {
+        const batchId = b.batch_id || b._id || "unknown";
 
-          // смотрим кеш по батчу
-          const cached = await BatchCache.findOne({ batch_id: batchId });
+        // смотрим кеш по батчу
+        // смотрим кеш по батчу
+        let cached = await BatchCache.findOne({ batch_id: batchId });
 
-          let health, anomalyCount;
-          if (cached && cached.processed_summary) {
-            const derived = deriveHealthScore(cached.processed_summary);
-            health = derived.health_score;
-            anomalyCount = derived.anomaly_count;
-          } else {
-            // fallback на metadata
+        let health, anomalyCount;
+        if (cached && cached.processed_summary) {
+          const derived = deriveHealthScore(cached.processed_summary);
+          health = derived.health_score;
+          anomalyCount = derived.anomaly_count;
+        } else {
+          // ✨ ИСПРАВЛЕНИЕ: если нет кеша - создаем его!
+          try {
+            cached = await refreshBatchCache(batchId, userId);
+            if (cached && cached.processed_summary) {
+              const derived = deriveHealthScore(cached.processed_summary);
+              health = derived.health_score;
+              anomalyCount = derived.anomaly_count;
+            } else {
+              // fallback только если совсем не удалось получить данные
+              health = b.metadata?.quick_health ?? null;
+              anomalyCount = b.metadata?.anomaly_count ?? 0;
+            }
+          } catch (err) {
+            console.warn(`[CACHE] Failed to refresh batch ${batchId}:`, err);
             health = b.metadata?.quick_health ?? null;
             anomalyCount = b.metadata?.anomaly_count ?? 0;
           }
+        }
 
-          return {
-            batch_id: batchId,
-            timestamp: b.created_at || b.metadata?.timestamp || b.timestamp || new Date().toISOString(),
 
-            summary: {
-              health_score: health,
-              anomaly_count: anomalyCount,
-            },
-          };
-        })
-      )
+        return {
+          batch_id: batchId,
+          timestamp: b.created_at || b.metadata?.timestamp || b.timestamp || new Date().toISOString(),
+
+          summary: {
+            health_score: health,
+            anomaly_count: anomalyCount,
+          },
+        };
+      })
+    )
     : [];
 
   const ttlMinutes = parseInt(process.env.USER_BATCHES_CACHE_TTL || "2", 10);

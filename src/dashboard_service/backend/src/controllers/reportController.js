@@ -14,10 +14,18 @@ export const getUserReport = async (req, res) => {
     const enrichedBatches = (cached?.batches_summary || []).map((b) => {
       // обогащаем health_status прямо здесь, чтобы PDF и JSON были одинаковые
       const anomalies = b.summary.anomaly_count ?? 0;
+      const healthScore = b.summary.health_score;
+
       let health_status = "Pending";
-      if (b.summary.health_score === null) health_status = "Pending";
-      else if (anomalies > 0) health_status = "Critical";
-      else health_status = "Healthy";
+      if (healthScore === null || healthScore === undefined) {
+        health_status = "Pending";
+      } else {
+        // ✅ ПРАВИЛЬНАЯ логика на основе процентного соотношения
+        const healthPercentage = healthScore * 100;
+        if (healthPercentage >= 80) health_status = "Healthy";
+        else if (healthPercentage >= 40) health_status = "Monitor";
+        else health_status = "Critical";
+      }
 
       return {
         batch_id: b.batch_id,
@@ -94,10 +102,10 @@ export const getWindowReport = async (req, res) => {
       attention: ae?.autoencoder_features?.attention_weights || null,
       lstm: lstm
         ? {
-            steps: lstm.predictions.steps,
-            features: lstm.predictions.features,
-            values: lstm.predictions.values,
-          }
+          steps: lstm.predictions.steps,
+          features: lstm.predictions.features,
+          values: lstm.predictions.values,
+        }
         : null,
     };
     return buildReportResponse(req, res, "window_report", data);
