@@ -1,36 +1,30 @@
-# src/ai-services/config/hosts.py
 import os
-from .environment import env
+from .environment import get_host
 
 class Hosts:
-    """Централизованная конфигурация всех хостов"""
-    
-    # MongoDB
-    MONGO_HOST = env.get_host('mongodb')
-    MONGO_PORT = 27017
+    # MongoDB AI
+    MONGO_AI_HOST = get_host('mongodb-ai')
+    MONGO_AI_PORT = int(os.getenv('MONGO_AI_PORT', 27017))
     
     # MinIO
-    MINIO_HOST = env.get_host('minio')
-    MINIO_PORT = int(os.getenv('MINIO_API_PORT', '9000'))
-    MINIO_CONSOLE_PORT = int(os.getenv('MINIO_CONSOLE_PORT', '9001'))
+    MINIO_HOST = get_host('minio')
+    MINIO_PORT = int(os.getenv('MINIO_API_PORT', 9000))
     
-    # Motor Generator
-    MOTOR_HOST = env.get_host('amp-generator')
-    MOTOR_PORT = 8005
+    # Motor WebSocket - для streaming pipeline
+    MOTOR_HOST = get_host('amp-generator')
+    MOTOR_PORT = int(os.getenv('AMP_PORT', 8005))
+    
+    @property
+    def MOTOR_WEBSOCKET_URL(self):
+        return f"ws://{self.MOTOR_HOST}:{self.MOTOR_PORT}/ws"
     
     # URLs
-    MONGO_URL = f"mongodb://{MONGO_HOST}:{MONGO_PORT}"
-    MINIO_URL = f"{MINIO_HOST}:{MINIO_PORT}"
-    MOTOR_WEBSOCKET_URL = env.get_url('amp-generator', 8005, 'ws', '/ws')
+    @property
+    def MONGO_AI_URL(self):
+        return f"mongodb://{os.getenv('MONGO_AI_USER')}:{os.getenv('MONGO_AI_PASSWORD')}@{self.MONGO_AI_HOST}:{self.MONGO_AI_PORT}/{os.getenv('MONGO_AI_DATABASE')}?authSource=admin"
     
-    @classmethod
-    def info(cls):
-        """Отладочная информация"""
-        return {
-            'environment': 'docker' if env.is_docker() else 'local',
-            'mongo': f"{cls.MONGO_HOST}:{cls.MONGO_PORT}",
-            'minio': cls.MINIO_URL,
-            'motor_ws': cls.MOTOR_WEBSOCKET_URL
-        }
+    @property
+    def MINIO_ENDPOINT(self):
+        return f"{self.MINIO_HOST}:{self.MINIO_PORT}"
 
 hosts = Hosts()
