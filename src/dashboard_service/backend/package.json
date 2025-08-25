@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "docker": "NODE_ENV=production DOCKER_ENV=true node src/index.js"
   },
   "keywords": [],
   "author": "",

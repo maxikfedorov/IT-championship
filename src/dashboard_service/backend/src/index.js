@@ -1,5 +1,3 @@
-// src\dashboard_service\backend\src\index.js
-
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -21,7 +19,24 @@ import reportRoutes from "./routes/report.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
+// 🔧 Правильная загрузка .env - НЕ перезаписываем существующие переменные
+const isDocker = process.env.DOCKER_ENV === 'true' || process.env.ENVIRONMENT === 'docker';
+
+if (!isDocker) {
+  // Локально загружаем .env, но НЕ перезаписываем существующие переменные
+  dotenv.config({ 
+    path: path.resolve(__dirname, '../../../../.env'),
+    override: false  // ⭐ Ключевой момент!
+  });
+  console.log('[ENV] Loaded local .env file');
+} else {
+  console.log('[ENV] Using Docker environment variables');
+}
+
+// 🔍 Отладочный вывод
+console.log('[ENV] MOTOR_API_BASE:', process.env.MOTOR_API_BASE);
+console.log('[ENV] PIPELINE_API_BASE:', process.env.PIPELINE_API_BASE);
+console.log('[ENV] AI_SERVICE_URL:', process.env.AI_SERVICE_URL);
 
 const app = express();
 
@@ -42,7 +57,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
 app.use(morgan("dev"));
 
 // routes
@@ -56,7 +70,11 @@ app.use("/report", reportRoutes);
 app.use("/dashboard", authMiddleware(["engineer", "admin"]), dashboardRoutes);
 
 app.get("/ping", (req, res) => {
-  res.json({ message: "pong" });
+  res.json({ 
+    message: "pong",
+    environment: isDocker ? 'docker' : 'local',
+    timestamp: new Date().toISOString()
+  });
 });
 
 const PORT = process.env.DASHBOARD_PORT || 8010;
@@ -65,5 +83,6 @@ const HOST = process.env.DASHBOARD_HOST || "0.0.0.0";
 connectDB().then(() => {
   app.listen(PORT, HOST, () => {
     console.log(`[SERVER] Dashboard backend running at http://${HOST}:${PORT}`);
+    console.log(`[SERVER] Environment: ${isDocker ? 'Docker' : 'Local'}`);
   });
 });
