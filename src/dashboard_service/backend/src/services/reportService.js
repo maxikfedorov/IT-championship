@@ -1,8 +1,10 @@
 import axios from "axios";
-import PDFDocument from "pdfkit"; // npm install pdfkit
+import PDFDocument from "pdfkit";
+
+const DASHBOARD_URL = process.env.DASHBOARD_URL || "http://localhost:8010";
 
 export async function generateDashboardReport(user_id) {
-  const r = await axios.get(`http://127.0.0.1:8010/dashboard/${user_id}?count=50`);
+  const r = await axios.get(`${DASHBOARD_URL}/dashboard/${user_id}?count=50`);
   return {
     user_id,
     timestamp: new Date().toISOString(),
@@ -11,8 +13,8 @@ export async function generateDashboardReport(user_id) {
 }
 
 export async function generateBatchReport(batch_id, user_id) {
-  const overview = await axios.get(`http://127.0.0.1:8010/api/batch/${batch_id}/overview?user_id=${user_id}`);
-  const timeline = await axios.get(`http://127.0.0.1:8010/api/batch/${batch_id}/anomalies/timeline`);
+  const overview = await axios.get(`${DASHBOARD_URL}/api/batch/${batch_id}/overview?user_id=${user_id}`);
+  const timeline = await axios.get(`${DASHBOARD_URL}/api/batch/${batch_id}/anomalies/timeline`);
   return {
     batch_id,
     user_id,
@@ -23,9 +25,9 @@ export async function generateBatchReport(batch_id, user_id) {
 }
 
 export async function generateWindowReport(batch_id, window_id) {
-  const auto = await axios.get(`http://127.0.0.1:8010/api/batch/${batch_id}/window/${window_id}/autoencoder`);
-  const attn = await axios.get(`http://127.0.0.1:8010/api/batch/${batch_id}/window/${window_id}/attention`);
-  const lstm = await axios.get(`http://127.0.0.1:8010/api/batch/${batch_id}/window/${window_id}/lstm`);
+  const auto = await axios.get(`${DASHBOARD_URL}/api/batch/${batch_id}/window/${window_id}/autoencoder`);
+  const attn = await axios.get(`${DASHBOARD_URL}/api/batch/${batch_id}/window/${window_id}/attention`);
+  const lstm = await axios.get(`${DASHBOARD_URL}/api/batch/${batch_id}/window/${window_id}/lstm`);
   return {
     batch_id,
     window_id,

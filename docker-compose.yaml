@@ -1,21 +1,60 @@
-version: '3.8'
+version: '3.9'
 
 services:
-  mongodb:
+  # ===================== AI Services =====================
+  ai_services:
+    build: ./src/ai-services
+    container_name: ai_services
+    restart: unless-stopped
+    ports:
+      - "${AI_PORT}:8000"
+    env_file:
+      - .env.docker   # ⬅️ здесь будут URL вида mongodb_ai, minio и т.д.
+    depends_on:
+      - mongodb_ai
+      - minio
+      - amp_generator
+    networks:
+      - ai_net      
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ===================== Amp Generator =====================
+  amp_generator:
+    build: ./src/amp_generator
+    container_name: amp_generator
+    restart: unless-stopped
+    ports:
+      - "${AMP_PORT}:8005"
+    env_file:
+      - .env.docker
+    networks:
+      - ai_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ===================== MONGODB (AI Services) =====================
+  mongodb_ai:
     image: mongo:7.0
-    container_name: mongodb_container
+    container_name: mongodb_ai
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
-      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_AI_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_AI_PASSWORD}
     ports:
-      - "${MONGO_PORT}:27017"
+      - "${MONGO_AI_PORT}:27017"
     volumes:
-      - mongodb_data:/data/db
-      - mongodb_config:/data/configdb
+      - mongodb_ai_data:/data/db
     networks:
-      - app_network
+      - ai_net
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -23,21 +62,73 @@ services:
       retries: 5
       start_period: 30s
 
+  # ===================== MONGODB (Dashboard Cache) =====================
+  mongodb_cache:
+    image: mongo:7.0
+    container_name: mongodb_cache
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_CACHE_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_CACHE_PASSWORD}
+    ports:
+      - "${MONGO_CACHE_PORT}:27017"
+    volumes:
+      - mongodb_cache_data:/data/db
+    networks:
+      - ai_net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ===================== REDIS =====================
+  redis:
+    image: redis:7.2
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ai_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ===================== REDIS INSIGHT (UI) =====================
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    restart: unless-stopped
+    ports:
+      - "5540:5540"
+    networks:
+      - ai_net
+    depends_on:
+      - redis
+
+  # ===================== MINIO =====================
   minio:
     image: minio/minio:latest
-    container_name: minio_container
+    container_name: minio
     restart: unless-stopped
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
-      - "${MINIO_API_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+      - "${MINIO_API_PORT}:9000"
+      - "${MINIO_CONSOLE_PORT}:9001"
     volumes:
       - minio_data:/data
-    networks:
-      - app_network
     command: server /data --console-address ":9001"
+    networks:
+      - ai_net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
@@ -45,82 +136,42 @@ services:
       retries: 3
       start_period: 30s
 
-  amp-generator:
-    build:
-      context: ./src/amp_generator
-      dockerfile: Dockerfile
-    container_name: amp_generator_container
+  # ===================== DASHBOARD BACKEND =====================
+  dashboard_backend:
+    build: ./src/dashboard_service/backend
+    container_name: dashboard_backend
     restart: unless-stopped
-    environment:
-      - ENVIRONMENT=docker
-      - HOST=0.0.0.0
-      - PORT=8005
-      - AUTO_START_MOTOR=true
-      - DATA_FREQUENCY=${AMP_DATA_FREQUENCY:-100}
-      - BATCH_SIZE=${AMP_BATCH_SIZE:-10}
-      - NOISE_LEVEL=${AMP_NOISE_LEVEL:-0.1}
     ports:
-      - "8005:8005"
-    networks:
-      - app_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-
-  ai-services:
-    build:
-      context: ./src/ai-services
-      dockerfile: Dockerfile
-    container_name: ai_services_container
-    restart: unless-stopped
-    environment:
-      - ENVIRONMENT=docker
-      - DOCKER_ENV=true
-      - HOST=0.0.0.0
-      - PORT=8000
-      - MONGO_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
-      - MONGO_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
-      - MONGO_HOST=mongodb
-      - MONGO_PORT=27017
-      - MONGO_AUTH_DB=${MONGO_AUTH_DB}
-      - MONGO_APP_DATABASE=${MONGO_APP_DATABASE}
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-      - MINIO_API_PORT=9000
-      - MOTOR_WEBSOCKET_URL=ws://amp-generator:8005/ws
-      - PIPELINE_WINDOW_SIZE=${PIPELINE_WINDOW_SIZE:-16384}
-      - PIPELINE_WINDOWS_PER_BATCH=${PIPELINE_WINDOWS_PER_BATCH:-20}
-      - PIPELINE_OVERLAP_RATIO=${PIPELINE_OVERLAP_RATIO:-0.75}
-      - PIPELINE_LSTM_STEPS=${PIPELINE_LSTM_STEPS:-5}
-    ports:
-      - "8000:8000"
-    networks:
-      - app_network
+      - "${DASHBOARD_PORT}:8010"
+    env_file:
+      - .env.docker
     depends_on:
-      mongodb:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-      amp-generator:
-        condition: service_healthy
+      - mongodb_cache
+      - redis
+      - ai_services
+      - amp_generator
+    networks:
+      - ai_net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+      test: ["CMD", "curl", "-f", "http://localhost:8010/ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
+
+# ===================== VOLUMES =====================
 volumes:
-  mongodb_data:
+  mongodb_ai_data:
     driver: local
-  mongodb_config:
+  mongodb_cache_data:
+    driver: local
+  redis_data:
     driver: local
   minio_data:
     driver: local
 
+# ===================== NETWORKS =====================
 networks:
-  app_network:
+  ai_net:
     driver: bridge

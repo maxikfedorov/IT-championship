@@ -78,18 +78,6 @@ async def shutdown_event():
     await close_mongo_connection()
     log('=== Shutdown Complete ===', MODULE)
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-@app.get("/dashboard", response_class=HTMLResponse)
-async def get_dashboard():
-    """Dashboard for motor diagnostics control"""
-    try:
-        with open("static/dashboard.html", "r", encoding="utf-8") as f:
-            html_content = f.read()
-        return HTMLResponse(content=html_content)
-    except FileNotFoundError:
-        return HTMLResponse(content="<h1>Dashboard not found</h1><p>Please ensure dashboard.html exists in static folder</p>")
-
 
 app.include_router(features_router)
 app.include_router(autoencoder_router)
