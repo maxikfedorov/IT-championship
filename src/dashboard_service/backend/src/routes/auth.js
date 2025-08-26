@@ -12,4 +12,10 @@ router.post("/refresh", refresh);
 // logout обязательно защищаем access токеном
 router.post("/logout", authMiddleware(), logout);
 
+// backend/src/routes/auth.js
+router.get('/verify', authMiddleware, (req, res) => {
+  res.json({ valid: true, user: req.user });
+});
+
+
 export default router;

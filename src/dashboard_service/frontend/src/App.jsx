@@ -9,10 +9,23 @@ import RegisterPage from "./pages/RegisterPage";
 import RequireAuth from "./components/RequireAuth";
 import UserProfile from "./components/UserProfile";
 import { useAuthContext } from "./api/AuthContext";
+import { useEffect } from "react";
 
 function App() {
-  const { user, logout } = useAuthContext();
+  const { user, logout, isLoading } = useAuthContext();
+  
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      logout(); 
+    };
+    
+    window.addEventListener('auth-expired', handleAuthExpired);
+    return () => window.removeEventListener('auth-expired', handleAuthExpired);
+  }, [logout]);
 
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
   return (
     <BrowserRouter>
       <Routes>

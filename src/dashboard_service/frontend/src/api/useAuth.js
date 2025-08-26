@@ -4,16 +4,31 @@ import api from "./apiClient"; // тот самый axios instance
 
 export function useAuth() {
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true); // Добавить состояние загрузки
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch {
-        setUser(null);
+    const initAuth = async () => {
+      const savedUser = localStorage.getItem("user");
+      const accessToken = localStorage.getItem("accessToken");
+      
+      if (savedUser && accessToken) {
+        try {
+          // Проверяем валидность токена
+          await api.get("/auth/verify"); // Добавить эндпоинт проверки
+          setUser(JSON.parse(savedUser));
+        } catch (error) {
+          // Токен невалиден - очищаем все
+          console.log("Token invalid, clearing auth data");
+          localStorage.removeItem("user");
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          setUser(null);
+        }
       }
-    }
+      setIsLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   // login через бекенд
@@ -51,5 +66,5 @@ export function useAuth() {
     localStorage.removeItem("refreshToken");
   };
 
-  return { user, login, logout };
+  return { user, login, logout, isLoading }; 
 }

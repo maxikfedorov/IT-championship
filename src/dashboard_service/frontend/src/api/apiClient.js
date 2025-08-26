@@ -1,4 +1,8 @@
 // frontend/src/api/apiClient.js
+
+// FIX: когда перезагрузка страницы, то падает авторизация
+// сначала loading, потом страница авторизации
+
 import axios from "axios";
 
 const api = axios.create({
@@ -6,7 +10,6 @@ const api = axios.create({
   timeout: 10000, // 10 секунд
 });
 
-// interceptor на каждый запрос — добавляем token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken");
   if (token) {
@@ -15,11 +18,9 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// флаг, чтобы не уходить в бесконечные циклы при refresh
 let isRefreshing = false;
 let refreshSubscribers = [];
 
-// утилита — повторим запрос после обновления токена
 function subscribeTokenRefresh(cb) {
   refreshSubscribers.push(cb);
 }
@@ -29,7 +30,6 @@ function onRefreshed(newAccessToken) {
   refreshSubscribers = [];
 }
 
-// response interceptor
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -59,14 +59,17 @@ api.interceptors.response.use(
         onRefreshed(newAccessToken);
 
         return api(originalRequest);
-      } catch (err) {
-        console.error("[API] Refresh token failed:", err);
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        window.location.href = "/login";
-      } finally {
-        isRefreshing = false;
-      }
+        } catch (err) {
+          console.error("[API] Refresh token failed:", err);
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("user"); // ⭐ Добавить очистку user
+          
+          window.dispatchEvent(new CustomEvent('auth-expired'));
+          return Promise.reject(err);
+        } finally {
+          isRefreshing = false;
+        }
     }
 
     return Promise.reject(error);
