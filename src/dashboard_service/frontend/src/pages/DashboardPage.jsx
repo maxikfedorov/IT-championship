@@ -27,6 +27,8 @@ import ControlPanel from "../components/ControlPanel";
 import { useAuthContext } from "../api/AuthContext";
 import SystemControlPanel from "../components/SystemControlPanel";
 import MotorHealthOverview from "../components/MotorHealthOverview";
+import ProjectInfo from "../components/ProjectInfo";
+import { PROJECT_INFO } from "../config/projectInfo";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -146,12 +148,15 @@ export default function DashboardPage() {
 								>
 									Engineering Dashboard
 								</Title>
-								<Text
-									type="secondary"
-									style={{ fontSize: "16px" }}
-								>
-									{user_id} • AI Motor Monitoring System
-								</Text>
+								<Space align="center" size="small">
+									<Text
+										type="secondary"
+										style={{ fontSize: "16px" }}
+									>
+										{user_id} • {PROJECT_INFO.name}
+									</Text>
+									<ProjectInfo />
+								</Space>
 							</div>
 						</Space>
 					</Col>
@@ -197,7 +202,7 @@ export default function DashboardPage() {
 				<Col xs={24} lg={10}>
 					<SystemControlPanel user={user} />
 				</Col>
-				<Col xs={24} lg={24-10}>
+				<Col xs={24} lg={24 - 10}>
 					<MotorHealthOverview user={user} />
 				</Col>
 			</Row>
