@@ -17,7 +17,7 @@ class PredictionRequest(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "data": [[0.1, 0.2, 0.3] + [0.0] * 116] * 10,  # 10 timesteps x 119 features
+                "data": [[0.1, 0.2, 0.3] + [0.0] * 116] * 10,  
                 "n_steps": 5,
                 "batch_id": "batch_123456"
             }
@@ -54,16 +54,16 @@ async def predict_multistep(request: PredictionRequest):
     Многошаговое прогнозирование с помощью Dual LSTM модели
     """
     try:
-        # Валидация данных
+        
         input_data = validate_input_data(request.data)
         
-        # Инференс
+        
         result = predictor.predict_multistep(input_data, request.n_steps)
         
-        # Генерация ID инференса
+        
         inference_id = str(uuid.uuid4())
         
-        # Сохранение в БД
+        
         await save_inference_result(
             inference_id=inference_id,
             batch_id=request.batch_id,

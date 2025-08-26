@@ -71,10 +71,10 @@ def create_windowed_features(current_a, current_b, current_c, extractor, window_
             current_c[start_idx:end_idx]
         )
         
-        # ✅ МЕТАДАННЫЕ НА ВЕРХНЕМ УРОВНЕ, НЕ В ГРУППАХ
+        
         window_result = {
-            **feature_groups,  # Сами признаки
-            'window_metadata': {  # Метаданные отдельно
+            **feature_groups,  
+            'window_metadata': {  
                 'window_index': window_idx,
                 'window_start_sample': start_idx,
                 'window_end_sample': end_idx
@@ -214,9 +214,9 @@ async def get_batch_features(batch_id: str):
 async def get_features_schema():
     """Возвращает полную схему всех признаков для dashboard visualization"""
     
-    # Полная схема признаков на основе реальных данных
+    
     feature_schema = {
-        "total_features": 119,  # Или точное количество
+        "total_features": 119,  
         "categories": {
             "common": {
                 "description": "Basic statistical features",
@@ -278,7 +278,7 @@ async def get_features_schema():
         }
     }
     
-    # Создаем плоский mapping: индекс -> название
+    
     flat_mapping = {}
     index = 0
     
@@ -287,7 +287,7 @@ async def get_features_schema():
             flat_mapping[index] = feature_name
             index += 1
     
-    # Обновляем общее количество
+    
     feature_schema["total_features"] = len(flat_mapping)
     
     return {

@@ -62,7 +62,6 @@ def connect_to_minio():
             secure=False
         )
         
-        # Проверяем подключение
         buckets = db.minio_client.list_buckets()
         log(f"Connected to MinIO: {minio_endpoint}", MODULE)
         

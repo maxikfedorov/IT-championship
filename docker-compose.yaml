@@ -43,7 +43,7 @@ services:
     ports:
       - "${AI_PORT}:8000"
     env_file:
-      - .env.docker   # ⬅️ здесь будут URL вида mongodb_ai, minio и т.д.
+      - .env.docker
     depends_on:
       - mongodb_ai
       - minio

@@ -16,25 +16,25 @@ feature_storage = FeatureStorage()
 @router.get("/user/{user_id}")
 async def get_user_batches(
     user_id: str, 
-    limit: int = Query(20, ge=1, le=200, description="Максимальное количество батчей"),  # УВЕЛИЧИВАЕМ до 200
+    limit: int = Query(20, ge=1, le=200, description="Максимальное количество батчей"),  
     offset: int = Query(0, ge=0, description="Смещение для пагинации")
 ):
     """Получает батчи пользователя с пагинацией"""
     try:
-        # Получаем больше данных для правильной пагинации
+        
         fetch_limit = limit + offset + 50
         
-        # Сначала из новой системы (batch_metadata)
+        
         new_batches = await batch_storage.get_user_batches(user_id, fetch_limit)
         
-        # Потом из старых коллекций (features)
+        
         old_batches = await feature_storage.get_user_extractions(user_id, fetch_limit)
         
-        # Объединяем и убираем дубликаты
+        
         all_batches = []
         seen_batch_ids = set()
         
-        # Добавляем новые батчи
+        
         for batch in new_batches:
             if batch['_id'] not in seen_batch_ids:
                 all_batches.append({
@@ -46,7 +46,7 @@ async def get_user_batches(
                 })
                 seen_batch_ids.add(batch['_id'])
         
-        # Добавляем старые батчи (из feature storage)
+        
         for extraction in old_batches:
             if extraction.get('batch_id') and extraction['batch_id'] not in seen_batch_ids:
                 all_batches.append({
@@ -58,10 +58,10 @@ async def get_user_batches(
                 })
                 seen_batch_ids.add(extraction['batch_id'])
         
-        # Сортируем по времени (новые первые)
+        
         all_batches.sort(key=lambda x: x['timestamp'], reverse=True)
         
-        # Применяем пагинацию
+        
         total_count = len(all_batches)
         paginated_batches = all_batches[offset:offset + limit]
         
@@ -93,7 +93,6 @@ async def get_recent_user_batches(
         
         batches_response = await get_user_batches(user_id, limit=actual_count, offset=0)
         
-        # ✅ Возвращаем пустой список, а не 404
         return {
             "user_id": user_id,
             "requested_count": count,
@@ -111,11 +110,11 @@ async def get_user_batches_by_timerange(
     user_id: str,
     start_date: str = Query(..., description="Начальная дата (ISO 8601)"),
     end_date: str = Query(..., description="Конечная дата (ISO 8601)"),
-    limit: int = Query(100, ge=1, le=1000, description="Максимальное количество батчей")  # УВЕЛИЧИВАЕМ до 1000
+    limit: int = Query(100, ge=1, le=1000, description="Максимальное количество батчей")  
 ):
     """Получает батчи пользователя за определенный временной интервал"""
     try:
-        # Валидация дат
+        
         try:
             start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
             end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
@@ -131,11 +130,11 @@ async def get_user_batches_by_timerange(
                 detail="Start date must be before end date"
             )
         
-        # Получаем все батчи пользователя
+        
         all_batches_response = await get_user_batches(user_id, limit=1000, offset=0)
         all_batches = all_batches_response['batches']
         
-        # Фильтруем по временному интервалу
+        
         filtered_batches = []
         for batch in all_batches:
             try:
@@ -143,10 +142,10 @@ async def get_user_batches_by_timerange(
                 if start_dt <= batch_dt <= end_dt:
                     filtered_batches.append(batch)
             except (ValueError, KeyError):
-                # Пропускаем батчи с некорректным timestamp
+                
                 continue
         
-        # Применяем лимит
+        
         limited_batches = filtered_batches[:limit]
         
         return {
@@ -165,7 +164,6 @@ async def get_user_batches_by_timerange(
         log(f"Error getting batches by timerange: {e}", MODULE, level="ERROR")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Оставляем старый эндпоинт для обратной совместимости
 @router.get("/user/{user_id}/latest")
 async def get_latest_user_batch(user_id: str):
     """Получает последний батч пользователя (deprecated - используйте /recent?count=1)"""
@@ -179,18 +177,17 @@ async def get_latest_user_batch(user_id: str):
         log(f"Error getting latest batch: {e}", MODULE, level="ERROR")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Остальные эндпоинты остаются без изменений...
 @router.get("/{batch_id}/metadata")
 async def get_batch_metadata(batch_id: str):
     """Получает метаданные батча (работает для всех типов)"""
     try:
-        # Сначала пробуем новую систему
+        
         metadata = await batch_storage.get_batch_metadata(batch_id)
         
         if metadata:
             return metadata
         
-        # Если не найдено, создаем метаданные из старых данных
+        
         features = await feature_storage.get_features_by_batch_id(batch_id)
         
         if features:
@@ -218,12 +215,12 @@ async def get_batch_metadata(batch_id: str):
 async def get_complete_batch_results(batch_id: str):
     """Получает все результаты батча (работает для всех типов)"""
     try:
-        # Получаем метаданные (с fallback логикой)
+        
         try:
             metadata = await get_batch_metadata(batch_id)
         except HTTPException as e:
             if e.status_code == 404:
-                # Если метаданных нет, но данные могут быть - продолжаем
+                
                 metadata = {
                     "_id": batch_id,
                     "status": "unknown",
@@ -232,7 +229,7 @@ async def get_complete_batch_results(batch_id: str):
             else:
                 raise
         
-        # Получаем данные из всех источников
+        
         results = {
             "batch_id": batch_id,
             "metadata": metadata,
@@ -241,21 +238,21 @@ async def get_complete_batch_results(batch_id: str):
             "dual_lstm": {"count": 0, "results": []}
         }
         
-        # Результаты признаков
+        
         try:
             features = await feature_storage.get_features_by_batch_id(batch_id)
             results["features"] = features
         except Exception as e:
             log(f"Features not found for {batch_id}: {e}", MODULE, level="WARN")
         
-        # Результаты автоэнкодера
+        
         try:
             autoencoder_results = await get_autoencoder_batch(batch_id)
             results["autoencoder"] = autoencoder_results
         except Exception as e:
             log(f"Autoencoder not found for {batch_id}: {e}", MODULE, level="WARN")
         
-        # Результаты LSTM
+        
         try:
             lstm_results = await get_lstm_batch(batch_id)
             results["dual_lstm"] = {
@@ -265,7 +262,7 @@ async def get_complete_batch_results(batch_id: str):
         except Exception as e:
             log(f"LSTM not found for {batch_id}: {e}", MODULE, level="WARN")
         
-        # Проверяем что хотя бы что-то нашли
+        
         has_data = any([
             results["features"],
             results["autoencoder"], 

@@ -23,7 +23,6 @@ class FeatureStorage:
         result = await self.collection.insert_one(doc)
         return str(result.inserted_id)
 
-    # метод поиска по batch_id
     async def get_features_by_batch_id(self, batch_id: str):
         doc = await self.collection.find_one({"batch_id": batch_id}, {"_id": 0})
         return doc

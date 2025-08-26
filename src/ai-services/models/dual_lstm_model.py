@@ -12,6 +12,7 @@ from datetime import datetime
 from database.database import get_minio_client
 from contextlib import contextmanager
 
+
 SEQUENCE_LENGTH = 10
 ORIGINAL_FEATURES = 119
 
@@ -191,5 +192,4 @@ class DualLSTMPredictor:
         }
 
 
-# Глобальный экземпляр предиктора
 predictor = DualLSTMPredictor()

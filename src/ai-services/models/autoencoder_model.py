@@ -14,7 +14,6 @@ from database.database import get_minio_client
 from utils.logger import log
 
 
-
 MODULE = "autoencoder"
 MODEL_BUCKET = "models"
 MODEL_OBJECT = "multihead_attention_autoencoder_20250805_195221.weights.h5"

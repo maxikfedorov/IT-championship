@@ -1,4 +1,4 @@
-# src\ai-services\routers\streaming.py
+
 
 from fastapi import APIRouter, HTTPException
 import asyncio
@@ -18,7 +18,7 @@ class StreamingPipelineProcessor:
     def __init__(self, user_id: str):
         self.user_id = user_id
         self.is_running = False
-        self.websocket_uri = hosts.MOTOR_WEBSOCKET_URL # "ws://amp-generator:8005/ws"
+        self.websocket_uri = hosts.MOTOR_WEBSOCKET_URL 
         self.data_buffer = {
             'current_R': [],
             'current_S': [], 
@@ -40,7 +40,7 @@ class StreamingPipelineProcessor:
             'anomalies_detected': 0,
             'healthy_batches': 0
         }
-        self.msg_count = 0  # ⬅️ 1 строка
+        self.msg_count = 0  
 
         
     @property
@@ -154,7 +154,7 @@ class StreamingPipelineProcessor:
             raise
     
     async def _process_incoming_data(self, data_list: List[Dict]):
-        self.msg_count += 1  # ⬅️ 1 строка
+        self.msg_count += 1  
         for data_point in data_list:
             self.data_buffer['current_R'].append(data_point.get('current_R', 0))
             self.data_buffer['current_S'].append(data_point.get('current_S', 0))
@@ -353,7 +353,7 @@ async def get_pipeline_streaming_status(user_id: str):
             "pipeline_status": "inactive",
             "timestamp": datetime.now().isoformat()
         }
-    # если работает – лучше возвращать всегда унифицированный формат
+    
     return {
         "user_id": user_id,
         "pipeline_status": "running",
@@ -378,4 +378,4 @@ async def get_active_pipeline_users():
 @router.get("/flow/{user_id}")
 async def data_flow(user_id: str):
     p = streaming_pipeline_manager.active_processors.get(user_id)
-    return {"messages": p.msg_count if p else 0}  # ⬅️ 3 строки
+    return {"messages": p.msg_count if p else 0}  
